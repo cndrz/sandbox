@@ -42,4 +42,54 @@ def add_loops(grid: Grid, rng: random.Random, chance: float = 0.08) -> Grid:
             if horizontal or vertical:
                 grid[y][x] = 0
     return grid
-    
+
+def manhattan(a: Point, b: Point) -> int:
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+def zero(a: Point, b: Point) -> int:
+    return 0
+
+def reconstruct(came_from: dict[Point, Point], end: Point) -> list[Point]:
+    path = [end]
+    while path[-1] in came_from:
+        path.append(came_from[path[-1]])
+    return path[::-1]
+
+def astar(
+    grid: Grid,
+    start: Point,
+    goal: Point,
+    heuristic: Callable[[Point, Point], int] = manhattan,
+) -> dict:
+    h, w = len(grid), len(grid[0])
+    g_score: dict[Point, int] = {start: 0}
+    came_from: dict[Point, Point] = {}
+    closed: set[Point] = set()
+    open_heap = [(heuristic(start, goal), 0, start)]
+
+    while open_heap:
+        _, neg_g, cur = heapq.heappop(open_heap)
+        if cur in closed:
+            continue
+        closed.add(cur)
+
+    if cur == goal:
+        return{"path": reconstruct(came_from, cur), "closed": closed}
+
+    g = -neg_g
+    for dx, dy in DIRS4:
+        nx, ny = cur[0] + dx, cur[1] + dy
+        nxt = (nx, ny)
+        if not (0 <= nx < w and 0 <= ny < h) or grid[ny][nx] == 1:
+            continue
+        if nxt in closed:
+            continue
+
+        tentative = g + 1
+        if tentative < g_score.get(nxt, float("inf")):
+            g_score[nxt] = tentative
+            came_from[nxt] = cur
+            f = tentative + heuristic(nxt, goal)
+            heapq.heappush(open_heap, (f, -tentative, nxt))
+
+    return {"path": None, "closed": closed}
