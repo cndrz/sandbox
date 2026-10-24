@@ -1,6 +1,5 @@
 import heapq
 import random
-import time
 from typing import Callable, Optional
 
 Point = tuple[int, int]
