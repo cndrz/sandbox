@@ -73,23 +73,72 @@ def astar(
             continue
         closed.add(cur)
 
-    if cur == goal:
-        return{"path": reconstruct(came_from, cur), "closed": closed}
+        if cur == goal:
+            return {"path": reconstruct(came_from, cur), "closed": closed}
 
-    g = -neg_g
-    for dx, dy in DIRS4:
-        nx, ny = cur[0] + dx, cur[1] + dy
-        nxt = (nx, ny)
-        if not (0 <= nx < w and 0 <= ny < h) or grid[ny][nx] == 1:
-            continue
-        if nxt in closed:
-            continue
+        g = -neg_g
+        for dx, dy in DIRS4:
+            nx, ny = cur[0] + dx, cur[1] + dy
+            nxt = (nx, ny)
+            if not (0 <= nx < w and 0 <= ny < h) or grid[ny][nx] == 1:
+                continue
+            if nxt in closed:
+                continue
 
-        tentative = g + 1
-        if tentative < g_score.get(nxt, float("inf")):
-            g_score[nxt] = tentative
-            came_from[nxt] = cur
-            f = tentative + heuristic(nxt, goal)
-            heapq.heappush(open_heap, (f, -tentative, nxt))
+            tentative = g + 1
+            if tentative < g_score.get(nxt, float("inf")):
+                g_score[nxt] = tentative
+                came_from[nxt] = cur
+                f = tentative + heuristic(nxt, goal)
+                heapq.heappush(open_heap, (f, -tentative, nxt))
 
     return {"path": None, "closed": closed}
+
+def render(grid: Grid, start: Point, goal: Point, result: dict) -> str:
+    on_path = set(result["path"] or [])
+    closed = result["closed"]
+    lines = []
+    for y, row in enumerate(grid):
+        chars = []
+        for x, cell in enumerate(row):
+            p = (x, y)
+            if p == start:
+                chars.append("S")
+            elif p == goal:
+                chars.append("G")
+            elif cell == 1:
+                chars.append("█")
+            elif p in on_path:
+                chars.append("·")
+            elif p in closed:
+                chars.append("░")
+            else:
+                chars.append(" ")
+        lines.append("".join(chars))
+    return "\n".join(lines)
+
+def report(title: str, grid: Grid, start: Point, goal: Point, result: dict) -> None:
+    print(f"=== {title} ===")
+    print(render(grid, start, goal, result))
+    steps = len(result["path"]) - 1 if result["path"] else None
+    print(f"\nPath length: {steps}, nodes explored: {len(result['closed'])}\n")
+
+
+def main() -> None:
+    W, H = 41, 21
+    rng = random.Random(227)
+    grid = add_loops(generate_maze(W, H, rng), rng)
+    start, goal = (1, 1), (W - 2, H - 2)
+
+    a = astar(grid, start, goal, manhattan)
+    d = astar(grid, start, goal, zero)
+
+    report("A* (Manhattan)", grid, start, goal, a)
+    report("Dijkstra (h = 0)", grid, start, goal, d)
+
+    saved = 100 - len(a["closed"]) / len(d["closed"]) * 100
+    print(f"A* explored {saved:.1f}% fewer nodes.")
+
+
+if __name__ == "__main__":
+    main()
