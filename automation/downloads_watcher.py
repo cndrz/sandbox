@@ -6,7 +6,7 @@ from pathlib import Path
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-DOWNLOADS = Path.home() / "Downloads"
+DOWNLOADS = DOWNLOADS = Path(r"D:\Downloads")
 
 # folder name -> extensions that go in it
 RULES = {
